@@ -554,6 +554,84 @@
         margin-top: 20px;
       }
 
+      .compare-grid,
+      .compare-decision {
+        display: grid;
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .compare-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .compare-card,
+      .decision-card {
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(37, 91, 93, 0.08);
+        box-shadow: 0 16px 34px rgba(37, 53, 58, 0.08);
+        overflow: hidden;
+      }
+
+      .compare-top {
+        padding: 18px 18px 14px;
+        background:
+          radial-gradient(circle at top right, rgba(255, 255, 255, 0.36), transparent 30%),
+          linear-gradient(135deg, color-mix(in srgb, var(--tone) 18%, #ffffff), color-mix(in srgb, var(--tone) 8%, #fffaf2));
+      }
+
+      .compare-top h3 {
+        margin: 12px 0 0;
+        font-size: 1.2rem;
+        line-height: 1.12;
+      }
+
+      .compare-subtitle {
+        margin-top: 6px;
+        color: rgba(30, 42, 47, 0.72);
+        font-weight: 700;
+      }
+
+      .compare-body {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+      }
+
+      .compare-body p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .compare-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .compare-metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .decision-card {
+        padding: 18px;
+      }
+
+      .decision-card strong {
+        display: block;
+        font-size: 0.95rem;
+      }
+
+      .decision-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
       .destination-card {
         position: relative;
         display: flex;
@@ -898,6 +976,8 @@
 
         .controls-grid,
         .spotlight-grid,
+        .compare-grid,
+        .compare-decision,
         .adult-summary-grid {
           grid-template-columns: 1fr;
         }
@@ -934,6 +1014,10 @@
         }
 
         .fact-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .compare-metric-grid {
           grid-template-columns: 1fr;
         }
 
@@ -1110,6 +1194,22 @@
         </div>
 
         <div class="spotlight-grid" id="spotlightGrid"></div>
+      </section>
+
+      <section class="board" id="compareBoard">
+        <div class="board-head">
+          <div>
+            <h2>Финальное сравнение</h2>
+            <p id="compareIntro">Не весь список сразу, а те 2-3 варианта, между которыми уже правда можно выбирать сегодня.</p>
+          </div>
+          <div class="board-right">
+            <strong id="compareCount">0</strong>
+            <span>варианта для финального выбора</span>
+          </div>
+        </div>
+
+        <div class="compare-grid" id="compareGrid"></div>
+        <div class="compare-decision" id="compareDecision"></div>
       </section>
 
       <section class="board" id="tripBoard">
@@ -1916,6 +2016,11 @@
       const topChoiceLabel = document.getElementById("topChoiceLabel");
       const boardCaption = document.getElementById("boardCaption");
       const emptyState = document.getElementById("emptyState");
+      const compareBoard = document.getElementById("compareBoard");
+      const compareGrid = document.getElementById("compareGrid");
+      const compareDecision = document.getElementById("compareDecision");
+      const compareCount = document.getElementById("compareCount");
+      const compareIntro = document.getElementById("compareIntro");
       const copySummaryButton = document.getElementById("copySummaryButton");
       const copyLinkButton = document.getElementById("copyLinkButton");
       const heroEyebrow = document.getElementById("heroEyebrow");
@@ -2021,6 +2126,7 @@
           ".";
 
         renderSpotlight(ranked);
+        renderComparison(ranked);
         renderCards(ranked);
       }
 
@@ -2054,6 +2160,7 @@
         const tripsVisible = uiState.tab === "trips";
         tripControls.hidden = !tripsVisible;
         tripSpotlight.hidden = !tripsVisible;
+        compareBoard.hidden = !tripsVisible;
         tripBoard.hidden = !tripsVisible;
         tripFootnote.hidden = !tripsVisible;
         adultOverview.hidden = tripsVisible;
@@ -2274,6 +2381,212 @@
           `;
           spotlightGrid.appendChild(wrapper);
         });
+      }
+
+      function renderComparison(ranked) {
+        compareGrid.innerHTML = "";
+        compareDecision.innerHTML = "";
+
+        if (!ranked.length) {
+          compareBoard.hidden = true;
+          return;
+        }
+
+        compareBoard.hidden = false;
+
+        const compareItems = getComparisonItems(ranked);
+        compareCount.textContent = String(compareItems.length);
+        compareIntro.textContent =
+          compareItems.length >= 3
+            ? "Не весь список сразу, а три сильных сценария: самый разумный, самый лёгкий и самый выразительный по текущим настройкам."
+            : "Список уже сильно сузился, поэтому здесь остаются только те варианты, между которыми действительно стоит выбирать.";
+
+        compareItems.forEach((item) => {
+          const wrapper = document.createElement("article");
+          wrapper.className = "compare-card";
+          wrapper.style.setProperty("--tone", item.card.tone);
+          wrapper.innerHTML = `
+            <div class="compare-top">
+              <span class="spot-kicker">${item.slotTitle}</span>
+              <h3>${item.card.icon} ${item.card.name}</h3>
+              <div class="compare-subtitle">${item.card.label}</div>
+            </div>
+            <div class="compare-body">
+              <p>${item.slotNote}</p>
+              <div class="compare-meta">
+                <span class="mini-pill">fit ${item.card.total}</span>
+                <span class="mini-pill">${item.card.travel}</span>
+                <span class="mini-pill">${buildBudgetLabel(item.card.cost)}</span>
+              </div>
+              <div class="compare-metric-grid">
+                <div class="fact">
+                  <span class="fact-label">Детям</span>
+                  <span class="fact-value">${item.card.kids}/5</span>
+                </div>
+                <div class="fact">
+                  <span class="fact-label">Взрослым</span>
+                  <span class="fact-value">${item.card.adults}/5</span>
+                </div>
+                <div class="fact">
+                  <span class="fact-label">Логистика</span>
+                  <span class="fact-value">${item.card.logistics}/5</span>
+                </div>
+                <div class="fact">
+                  <span class="fact-label">Погода</span>
+                  <span class="fact-value">${item.card.weather}/5</span>
+                </div>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Когда брать</span>
+                <span class="fact-value">${item.card.chooseWhen}</span>
+              </div>
+            </div>
+          `;
+          compareGrid.appendChild(wrapper);
+        });
+
+        buildDecisionCards(compareItems).forEach((item) => {
+          const card = document.createElement("article");
+          card.className = "decision-card";
+          card.innerHTML = `
+            <strong>${item.title}</strong>
+            <p>${item.text}</p>
+          `;
+          compareDecision.appendChild(card);
+        });
+      }
+
+      function getComparisonItems(ranked) {
+        const top = ranked[0];
+        const easiest =
+          pickUnique(
+            [...ranked].sort((a, b) => getEaseSignal(b) - getEaseSignal(a)),
+            [top?.id]
+          ) ||
+          ranked[1] ||
+          top;
+        const special =
+          pickUnique(
+            [...ranked].sort((a, b) => getEmotionalSignal(b) - getEmotionalSignal(a)),
+            [top?.id, easiest?.id]
+          ) ||
+          ranked[2] ||
+          ranked[1] ||
+          top;
+
+        return [
+          {
+            key: "best",
+            slotTitle: "Лучший общий выбор",
+            slotNote: "Это вариант, который сейчас лучше всего собирает весь ваш запрос в одну адекватную поездку.",
+            card: top,
+          },
+          {
+            key: "easy",
+            slotTitle: "Самый беспроблемный",
+            slotNote: "Берите его, если хочется уменьшить риск усталости, сложной логистики или погодной хрупкости.",
+            card: easiest,
+          },
+          {
+            key: "special",
+            slotTitle: getSpecialSlotTitle(),
+            slotNote: getSpecialSlotNote(),
+            card: special,
+          },
+        ].filter((item, index, list) => item.card && list.findIndex((entry) => entry.card.id === item.card.id) === index);
+      }
+
+      function getEaseSignal(destination) {
+        return (
+          destination.logistics * 2 +
+          destination.weather * 1.5 +
+          (6 - destination.energy) * 1.4 +
+          destination.indoor * 0.8 +
+          (destination.car === "none" ? 2 : destination.car === "helpful" ? -1 : -3)
+        );
+      }
+
+      function getEmotionalSignal(destination) {
+        return (
+          destination.adults * 2 +
+          destination.scenic * 2 +
+          destination.kids * 1.2 +
+          destination.energy * 0.6
+        );
+      }
+
+      function getSpecialSlotTitle() {
+        if (state.mode === "kids") {
+          return "Самый яркий для детей";
+        }
+        if (state.mode === "adults" || state.focus === "city") {
+          return "Самый красивый / атмосферный";
+        }
+        if (state.focus === "science") {
+          return "Самый сильный indoor";
+        }
+        if (state.focus === "nature") {
+          return "Самый красивый выезд";
+        }
+        return "Самый эмоциональный";
+      }
+
+      function getSpecialSlotNote() {
+        if (state.mode === "kids") {
+          return "Это не обязательно самый простой день, зато здесь максимальный шанс на настоящий детский вау.";
+        }
+        if (state.mode === "adults" || state.focus === "city") {
+          return "Это вариант, который даёт более сильное взрослое впечатление, чем просто удобную галочку в плане.";
+        }
+        if (state.focus === "science") {
+          return "Если хочется не просто безопасный indoor, а более сильный музейный или интерактивный день, смотрите сюда.";
+        }
+        if (state.focus === "nature") {
+          return "Здесь важнее впечатление и картинка дня, чем идеальная простота.";
+        }
+        return "Его стоит брать, если хочется больше ощущения поездки, а не только рациональной удобности.";
+      }
+
+      function buildDecisionCards(compareItems) {
+        const best = compareItems.find((item) => item.key === "best") || compareItems[0];
+        const easy = compareItems.find((item) => item.key === "easy") || compareItems[1] || best;
+        const special =
+          compareItems.find((item) => item.key === "special") ||
+          compareItems[compareItems.length - 1] ||
+          best;
+
+        return [
+          {
+            title: "Если нужен самый разумный выбор",
+            text:
+              best.card.name +
+              " — " +
+              best.card.label.toLowerCase() +
+              ". Это сейчас самый собранный ответ на ваши фильтры без лишних компромиссов.",
+          },
+          {
+            title: "Если нужен самый лёгкий день",
+            text:
+              easy.card.name +
+              " — лучший вариант, если хочется меньше усталости, меньше риска и меньше шансов, что логистика испортит настроение.",
+          },
+          {
+            title: "Если хочется большего впечатления",
+            text:
+              special.card.name +
+              " — берите его, если хочется не просто удобной опции, а дня, который даст более сильную картинку и ощущение \"мы правда куда-то съездили\".",
+          },
+        ];
+      }
+
+      function buildBudgetLabel(cost) {
+        if (cost <= 2) {
+          return "мягкий бюджет";
+        }
+        if (cost === 3) {
+          return "средний бюджет";
+        }
+        return "дорогой день";
       }
 
       function buildPhoto(destination, className) {

@@ -739,6 +739,44 @@
         font-size: 0.84rem;
       }
 
+      .detail-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .detail-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(247, 241, 231, 0.92);
+        border: 1px solid rgba(37, 91, 93, 0.08);
+        color: var(--ink);
+        font-size: 0.84rem;
+        line-height: 1.35;
+      }
+
+      .detail-pill strong {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: lowercase;
+      }
+
+      .when-note {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(247, 241, 231, 0.72);
+        color: var(--ink);
+        line-height: 1.5;
+      }
+
+      .when-note strong {
+        color: var(--muted);
+      }
+
       .fact-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2630,20 +2668,12 @@
                 ${destination.reasons.map((reason) => `<span>• ${reason}</span>`).join("")}
               </div>
 
-              <div class="fact-grid">
-                <div class="fact">
-                  <span class="fact-label">Когда выбирать</span>
-                  <span class="fact-value">${destination.chooseWhen}</span>
-                </div>
-                <div class="fact">
-                  <span class="fact-label">Дорога</span>
-                  <span class="fact-value">${destination.travel}</span>
-                </div>
-                <div class="fact">
-                  <span class="fact-label">Цена сейчас</span>
-                  <span class="fact-value">${destination.priceDetail}</span>
-                </div>
+              <div class="detail-pills">
+                <span class="detail-pill"><strong>дорога</strong> ${destination.travel}</span>
+                <span class="detail-pill"><strong>цена</strong> ${destination.priceDetail}</span>
               </div>
+
+              <div class="when-note"><strong>Когда:</strong> ${destination.chooseWhen}</div>
 
               <div class="scores">
                 ${buildScoreRow("Взрослые", destination.adults)}
